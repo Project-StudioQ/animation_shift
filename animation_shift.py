@@ -121,7 +121,7 @@ def _update_deform( self, depsgraph ):
             if DEBUG_MODE:
                 print( 'obj.' + path, new_val, diff )
         except Exception as e:
-            # 例外を握りつぶす(たぶんevalで出る)
+            # XXX: evalで出るであろう例外を無視
             if DEBUG_MODE:
                 print( "Exception in animation key shift update: ", e )
 
