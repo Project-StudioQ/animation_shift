@@ -1,7 +1,7 @@
 """
     This file is part of Animation Offset Shift.
 
-    Copyright (C) 2021 Project Studio Q inc.
+    Copyright (C) 2021-2024 Project Studio Q inc.
 
     Animation Offset Shift is free software; you can redistribute it and/or
     modify it under the terms of the GNU General Public License
@@ -19,11 +19,8 @@
 """
 
 import bpy
-import bgl
-import gpu
 import blf
 import mathutils
-from gpu_extras.batch import batch_for_shader
 
 # -----------------------------------------------------------------------------
 
@@ -124,7 +121,7 @@ def _update_deform( self, depsgraph ):
             if DEBUG_MODE:
                 print( 'obj.' + path, new_val, diff )
         except Exception as e:
-            # Evalの例外を無視する
+            # 例外を握りつぶす(たぶんevalで出る)
             if DEBUG_MODE:
                 print( "Exception in animation key shift update: ", e )
 
@@ -173,10 +170,10 @@ def _draw( ):
     if scene.temp_animation_shift:
         bpy.context.tool_settings.use_keyframe_insert_auto = False
 
-        blf.size( 0, 32, 72 )
+        blf.size( 0, 32 )
         blf.position( 0, 16, 16, 0 )
         blf.color( 0, 1.0, 0.0, 0.0, 1.0 )
-        blf.draw( 0, "!! Animation Offset Shift Enabled !!" )
+        blf.draw( 0, "!! Animation Offset Shift が有効です !!" )
 
 def _update_temp_animation_shift( self, context ):
     scene = bpy.context.scene
@@ -204,22 +201,22 @@ def register():
     for i in classes:
         bpy.utils.register_class(i)
 
-    _initialize( )
+    _initialized( )
 
 def unregister():
     """
         クラス登録解除
     """
-    _deinitialize( )
+    _deinitialized( )
 
     for i in classes:
         bpy.utils.unregister_class(i)
 
-def _initialize( ):
+def _initialized( ):
     """
         初期化
     """
-    bpy.types.Scene.temp_animation_shift = bpy.props.BoolProperty( name="Animation Offset Shift Enable", default= False, update=_update_temp_animation_shift )
+    bpy.types.Scene.temp_animation_shift = bpy.props.BoolProperty( name="Animation Offset Shift Enabled", default= False, update=_update_temp_animation_shift )
     bpy.types.Scene.temp_use_keyframe_insert_auto = bpy.props.BoolProperty( name="Original Timeline's Auto Keying", default= False )
 
     bpy.app.handlers.load_pre.append( _stop_update )
@@ -230,11 +227,12 @@ def _initialize( ):
     bpy.app.handlers.load_post.append( _init_deform )
     bpy.app.handlers.redo_post.append( _init_deform )
     bpy.app.handlers.undo_post.append( _init_deform )
+    bpy.app.handlers.depsgraph_update_post.append( _update_deform )
 
     global _func_handler_display_handle
     _func_handler_display_handle = bpy.types.SpaceView3D.draw_handler_add( _draw, (), 'WINDOW', 'POST_PIXEL' )
 
-def _deinitialize( ):
+def _deinitialized( ):
     """
         後始末
     """
@@ -253,3 +251,5 @@ def _deinitialize( ):
     bpy.app.handlers.load_post.remove( _init_deform )
     bpy.app.handlers.redo_post.remove( _init_deform )
     bpy.app.handlers.undo_post.remove( _init_deform )
+    bpy.app.handlers.depsgraph_update_post.remove( _update_deform )
+
